@@ -1,0 +1,4 @@
+sudo netstat -nlptu | grep 80
+kubectl config set-context --current --namespace=$(namespace_name)  #change current namespace
+diff det_3.yaml det_4.yaml    #compare 2 linux files
+service --status-all   #show all services

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap 
+data:
+  map.conf: |-
+      conf {
+        user: ADMIN
+        pwd: PASSWORD
+        dir: /home
+        }

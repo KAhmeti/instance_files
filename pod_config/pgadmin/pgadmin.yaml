@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pgadmin
+spec:
+  containers:
+  - name: pgadmin-container
+    image: dpage/pgadmin4:latest
+    envFrom: 
+    - secretRef: 
+        name: pg-user-and-pass
+    env:
+    - name: pg-user-and-pass      
+      value: PGADMIN_DEFAULT_EMAIL
+    - name: pg-user-and-pass
+      value: PGADMIN_DEFAULT_PASSWORD

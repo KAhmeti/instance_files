@@ -1,0 +1,16 @@
+---
+- name : Playbook to Apply Terraform resources
+  hosts : 
+    - local
+  tasks : 
+  - name : Terraform init
+    ansible.builtin.command : 
+      cmd : terraform init
+    args :
+      chdir: /home/demo/msimi4     
+  - name : Terraform apply
+    ansible.builtin.command :
+      cmd : terraform apply
+    args:   
+      chdir: /home/demo/msimi4  
+    #-auto-approve

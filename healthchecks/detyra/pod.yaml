@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx 
+spec:
+  containers:
+  - name: nginx
+    image: nginx:alpine
+    volumeMounts:
+    - name: map-conf
+      mountPath: /var/log/nginx/
+    readinessProbe:
+      exec:
+        command:
+        - cat
+        - /var/log/nginx/access.log
+      initialDelaySeconds: 5
+      periodSeconds: 5
+  - name: sidecar
+    image: busybox
+    command: ["sh", "-c", "tail -f /var/log/nginx/access.log", "sleep 3600"]
+#    args:
+ #    - /bin/sh
+  #   - -c
+ #  - 'tail -f /var/log/nginx/access.log'
+   #  - 'sleep 600'
+    volumeMounts:
+    - name: map-conf
+      mountPath: /var/log/nginx/
+  volumes:
+  - name: map-conf
+    emptyDir: {}

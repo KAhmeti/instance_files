@@ -1,0 +1,1 @@
+5. Add another container with `busybox` image on the `nginx` pod created on assignment 1, `cat` the data on `/var/log/nginx/access.logs` from the busybox. `Hint: Use volumes and mount on same directory.`

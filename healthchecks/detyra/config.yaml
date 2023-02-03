@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: configmap
+spec:
+  containers:
+  - image: busybox:latest
+    name: busybox
+    args: [/bin/sh, -c, 'cat /etc/map.conf']
+    volumeMounts:
+    - name: map-conf
+      mountPath: /etc/map.conf 
+      subPath: map.conf  
+  - name: sidecar
+    image: busybox
+    args:
+     - /bin/sh
+     - -c
+     - sleep 36000
+    volumeMounts:
+    - name: map-conf
+      mountPath: /etc/map.conf # This should be your final destination
+      subPath: map.conf # The name of the file to be placed inside /etc, the filename used here and in mountPath should be same.
+  # Define the volumes to be used by these containers
+  volumes:
+  - name: map-conf 
+    configMap:
+       name: configmap
+       items:
+         - key: map.conf  # Name of the item we had used inside our ConfigMap (under data:)
+           path: map.conf # Name of the file to be placed inside /etc

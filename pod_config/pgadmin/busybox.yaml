@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox
+spec:
+  containers:
+  - name: busybox-container
+    image: busybox:latest
+    command: ["sleep","3600"]
+  nodeName: kastriot-worker2
+  tolerations: 
+  - key: "life"
+    operator: "Equal"
+    value: "gjirafa"
+    effect: "NoExecute"
+  - key: "gjirafa"
+    operator: "Equal"
+    value: "life"
+    effect: "NoSchedule"
