@@ -1,0 +1,209 @@
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CERTIFICATE GENERATION AND SIGNING
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+request security pki generate-key-pair size 2048 type rsa certificate-id KODE   --  Create certificate
+request security pki local-certificate generate-self-signed certificate-id KODE subject "DC=kode.net,CN=dev" domain-name kode.dev  ip-address 34.148.113.148  --  Generate and sign certificate
+show security pki local-certificate certificate-id KODE  --  show the generated cert.
+[configure mode] set system services web-management https pki-local-certificate KODE  --  configure web-management to use cert.
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+NAT CONFIGURATION
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+edit security nat source rule-set RA-KODE_VPN-src  --  add the nat rule for remote access (RA-remote access)
+set from zone VPN  --  set incoming traffic zone (traffic from remote clients)
+set to zone test-zone  --  route incoming traffic to main zone
+set rule RA-KODE-VPN-rule(RULE-NAME) match source-address 0/0  --  match ALL incoming traffic
+set rule RA-KODE-VPN-rule then source-nat interface  --  NAT incoming traffic
+
+DIRECT COMMANDS
+set interfaces st0 unit 110 family inet address 172.20.20.1/24
+set security zones security-zone test-zone host-inbound-traffic system-services any-service
+set security zones security-zone test-zone interfaces st0.110
+
+set security nat source rule-set RA-KODE_VPN-src from zone VPN
+set security nat source rule-set RA-KODE_VPN-src to zone test-zone
+set security nat source rule-set RA-KODE_VPN-src rule RA-KODE-VPN-rule match source-address 0.0.0.0/0
+set security nat source rule-set RA-KODE_VPN-src rule RA-KODE-VPN-rule then source-nat interface
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGURE ADDRESS BOOK ENTRY
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+edit security address-book global  --  add the address book for primary zone (NOT SURE IF MANDATORY)
+set address test-zone $ADDRESS-RANGE  --  set the address range for main zone (NOT SURE IF MANDATORY)
+exit
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGURE SECURITY POLICIES (firewall rules between zones)
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+edit security policies from-zone test-zone to-zone VPN policy RA-KODE-VPN-1(POLICY-NAME)  --  create security policy
+set match source-address any destination-address any application any  --  define policy
+set then permit  --  permit traffic through zone
+
+edit security policies from-zone VPN to-zone test-zone policy RA-KODE-VPN-2(POLICY-NAME)  --  create other security policy 
+set match source-address any destination-address any application any  --  define policy
+set then permit  --  permit traffic through zone
+
+set interfaces st0.1000 family inet  --  create passthrough interface
+set security-zone VPN interfaces st0.1000  --  create security zone
+
+DIRECT COMMANDS
+set interfaces st0 unit 100 family inet address 10.40.40.1/24
+set security zones security-zone VPN host-inbound-traffic system-services all
+set security zones security-zone VPN interfaces st0.100
+
+set security policies from-zone VPN to-zone hb-reavis policy Remote-Access-hb-reavis match source-address any
+set security policies from-zone VPN to-zone hb-reavis policy Remote-Access-hb-reavis match destination-address any
+set security policies from-zone VPN to-zone hb-reavis policy Remote-Access-hb-reavis match application any
+set security policies from-zone VPN to-zone hb-reavis policy Remote-Access-hb-reavis then permit
+
+set security policies from-zone VPN to-zone primary policy RA-KODE-VPN-1 match source-address any
+set security policies from-zone VPN to-zone primary policy RA-KODE-VPN-1 match destination-address any
+set security policies from-zone VPN to-zone primary policy RA-KODE-VPN-1 match application any
+set security policies from-zone VPN to-zone primary policy RA-KODE-VPN-1 then permit
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGURE ACCESS PARAMETERS
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+edit access address-assignment pool RA-KODE-pool family inet  --  create pool of addresses
+set network 10.40.40.0/24  --  define subnet for address allocation
+set range RA-KODE-range low 10.40.40.1 high 10.40.40.50  --  set address range for Remote Access users
+set xauth-attributes primary-dns 8.8.8.8  --  set DNS server for users
+
+DIRECT COMMANDS
+set access address-assignment pool RA-KODE-pool family inet network 10.40.40.0/24
+set access address-assignment pool RA-KODE-pool family inet range RA-KODE-range low 10.40.40.2
+set access address-assignment pool RA-KODE-pool family inet range RA-KODE-range high 10.40.40.50
+set access address-assignment pool RA-KODE-pool family inet xauth-attributes primary-dns 8.8.8.8/32
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGURE USER CREDENTIALS
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+edit access profile RA-KODE-access  --  create user profile
+set client admin firewall-user password admin123  --  create credentials
+set address-assignment pool RA-KODE-pool  --  assign pool to get Addresses from
+exit
+set access firewall-authentication web-authentication default-profile RA-KODE-access  --  set authentication
+
+DIRECT COMMANDS
+set access profile RA-KODE-access client admin firewall-user password admin123
+set access profile RA-KODE-access address-assignment pool RA-KODE-pool
+
+set access firewall-authentication web-authentication default-profile RA-KODE-access
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGURE SERVICES FOR CERTIFICATE
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+edit services ssl termination  --  create ssl services
+set profile RA-KODE-term server-certificate KODE  --  bind ssl service to certificate
+exit
+
+edit security tcp-encap  --  configure tcp encapsulation
+set profile KODE-SSL ssl-profile RA-KODE-term  --  bind to ssl profile
+
+DIRECT COMMANDS
+set services ssl termination profile RA-KODE-term server-certificate KODE
+set security tcp-encap profile KODE-SSL ssl-profile RA-KODE-term
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGURE IKE PARAMETERS
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+edit security ike proposal RA-KODE-VPN-proposal
+set authentication-method pre-shared-key dh-group group14
+set authentication-algorithm sha-256 encryption-algorithm aes-256-cbc
+exit
+
+edit security ike policy RA-KODE-VPN-policy
+set mode aggressive proposals RA-KODE-VPN-proposal pre-shared-key ascii-text juniper123
+exit
+
+edit security ike gateway RA-KODE-VPN-gateway
+set ike-policy RA-KODE-VPN-policy
+set dynamic user-at-hostname admin@dev.kode.net
+set dynamic ike-user-type shared-ike-id
+set dead-peer-detection optimized interval 10 threshold 5
+set external-interface ge-0/0/0
+set local-address 172.20.254.20
+set aaa access-profile RA-KODE-access
+set version v1-only
+set tcp-encap-profile KODE-SSL
+
+DIRECT COMMANDS
+set security ike proposal RA-KODE-VPN-proposal authentication-method pre-shared-keys
+set security ike proposal RA-KODE-VPN-proposal dh-group group19
+set security ike proposal RA-KODE-VPN-proposal authentication-algorithm sha-256
+set security ike proposal RA-KODE-VPN-proposal encryption-algorithm aes-256-cbc
+
+set security ike policy RA-KODE-VPN-policy mode aggressive
+set security ike policy RA-KODE-VPN-policy proposals RA-KODE-VPN-proposal
+set security ike policy RA-KODE-VPN-policy pre-shared-key ascii-text juniper123
+
+set security ike gateway RA-KODE-VPN-gateway ike-policy RA-KODE-VPN-policy
+set security ike gateway RA-KODE-VPN-gateway dynamic user-at-hostname "admin@dev.kode.net"
+set security ike gateway RA-KODE-VPN-gateway dynamic ike-user-type shared-ike-id
+set security ike gateway RA-KODE-VPN-gateway dead-peer-detection optimized
+set security ike gateway RA-KODE-VPN-gateway dead-peer-detection interval 10
+set security ike gateway RA-KODE-VPN-gateway dead-peer-detection threshold 5
+set security ike gateway RA-KODE-VPN-gateway local-identity inet 35.196.173.45
+set security ike gateway RA-KODE-VPN-gateway external-interface ge-0/0/0
+set security ike gateway RA-KODE-VPN-gateway aaa access-profile RA-KODE-access
+set security ike gateway RA-KODE-VPN-gateway version v1-only
+set security ike gateway RA-KODE-VPN-gateway tcp-encap-profile KODE-SSL
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGURE IPSEC PARAMETERS
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+edit security ipsec
+set proposal RA-KODE-VPN-proposal protocol esp encryption-algorithm aes-256-gcm
+set policy RA-KODE-VPN-policy perfect-forward-secrecy keys group14
+set policy RA-KODE-VPN-policy proposals RA-KODE-VPN-proposal
+
+edit security ipsec vpn RA-KODE-VPN
+set bind-interface st0.0 df-bit clear
+set ike gateway RA-KODE-VPN-gateway ipsec-policy RA-KODE-VPN-policy
+set traffic-selector ts-1 local-ip 172.20.254.20/28 remote-ip 0/0
+
+DIRECT COMMANDS
+set security ipsec proposal RA-KODE-VPN-proposal protocol esp
+set security ipsec proposal RA-KODE-VPN-proposal encryption-algorithm aes-256-gcm
+
+set security ipsec policy RA-KODE-VPN-policy perfect-forward-secrecy keys group19
+set security ipsec policy RA-KODE-VPN-policy proposals RA-KODE-VPN-proposal
+
+set security ipsec vpn RA-KODE-VPN bind-interface st0.100
+set security ipsec vpn RA-KODE-VPN df-bit clear
+set security ipsec vpn RA-KODE-VPN ike gateway RA-KODE-VPN-gateway
+set security ipsec vpn RA-KODE-VPN ike ipsec-policy RA-KODE-VPN-policy
+set security ipsec vpn RA-KODE-VPN traffic-selector ts-1 local-ip 0.0.0.0/0
+set security ipsec vpn RA-KODE-VPN traffic-selector ts-1 remote-ip 0.0.0.0/0
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGURE REMOTE ACCESS CONFIGURATION
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+edit security remote-access
+set client-config RA-KODE-VPN-client connection-mode manual
+set client-config RA-KODE-VPN-client dead-peer-detection interval 60 threshold 5
+set profile RA-KODE-VPN-proposal ipsec-vpn RA-KODE-VPN
+set profile RA-KODE-VPN-proposal access-profile RA-KODE-access
+set profile RA-KODE-VPN-proposal client-config RA-KODE-VPN-client
+set default-profile RA-KODE-VPN-proposal
+
+DIRECT COMMANDS
+set security remote-access profile RA-KODE-VPN-proposal ipsec-vpn RA-KODE-VPN
+set security remote-access profile RA-KODE-VPN-proposal access-profile RA-KODE-access
+set security remote-access profile RA-KODE-VPN-proposal client-config RA-KODE-VPN-client
+set security remote-access client-config RA-KODE-VPN-client connection-mode manual
+set security remote-access client-config RA-KODE-VPN-client dead-peer-detection interval 60
+set security remote-access client-config RA-KODE-VPN-client dead-peer-detection threshold 5
+set security remote-access default-profile RA-KODE-VPN-proposal
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+commit
+
+
+
+
+
+
+
+

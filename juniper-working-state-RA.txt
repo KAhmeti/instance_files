@@ -1,0 +1,128 @@
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CERTIFICATE GENERATION AND SIGNING
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+request security pki generate-key-pair size 2048 type rsa certificate-id KODE   --  Create certificate
+request security pki local-certificate generate-self-signed certificate-id KODE subject "DC=kode.net,CN=dev" domain-name kode.dev  ip-address 34.148.113.148  --  Generate and sign certificate
+show security pki local-certificate certificate-id KODE  --  show the generated cert.
+[configure mode] set system services web-management https pki-local-certificate KODE  --  configure web-management to use cert.
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+NAT CONFIGURATION
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+set security nat source rule-set RA-KODE_VPN-src from zone VPN
+set security nat source rule-set RA-KODE_VPN-src to zone test-zone
+set security nat source rule-set RA-KODE_VPN-src rule RA-KODE-VPN-rule match source-address 0.0.0.0/0
+set security nat source rule-set RA-KODE_VPN-src rule RA-KODE-VPN-rule then source-nat interface
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGURE ADDRESS BOOK ENTRY
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+N/A
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGURE SECURITY POLICIES (firewall rules between zones)
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+set security policies from-zone VPN to-zone primary policy RA-KODE-VPN-1 match source-address any
+set security policies from-zone VPN to-zone primary policy RA-KODE-VPN-1 match destination-address any
+set security policies from-zone VPN to-zone primary policy RA-KODE-VPN-1 match application any
+set security policies from-zone VPN to-zone primary policy RA-KODE-VPN-1 then permit
+
+set security policies from-zone primary to-zone VPN policy RA-KODE-VPN-2 match source-address any
+set security policies from-zone primary to-zone VPN policy RA-KODE-VPN-2 match destination-address any
+set security policies from-zone primary to-zone VPN policy RA-KODE-VPN-2 match application any
+set security policies from-zone primary to-zone VPN policy RA-KODE-VPN-2 then permit
+
+set security policies from-zone VPN to-zone $CLIENT-TO-REACH policy Remote-Access-$CLIENT-TO-REACH match source-address any
+set security policies from-zone VPN to-zone $CLIENT-TO-REACH policy Remote-Access-$CLIENT-TO-REACH match destination-address any
+set security policies from-zone VPN to-zone $CLIENT-TO-REACH policy Remote-Access-$CLIENT-TO-REACH match application any
+set security policies from-zone VPN to-zone $CLIENT-TO-REACH policy Remote-Access-$CLIENT-TO-REACH then permit
+
+set interfaces st0 unit 100 family inet address 10.40.40.1/24  --  create passthrough interface
+
+set security zones security-zone VPN host-inbound-traffic system-services all
+set security zones security-zone VPN interfaces st0.100
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGURE ACCESS PARAMETERS
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+set access address-assignment pool RA-KODE-pool family inet network 10.40.40.0/24
+set access address-assignment pool RA-KODE-pool family inet range RA-KODE-range low 10.40.40.2
+set access address-assignment pool RA-KODE-pool family inet range RA-KODE-range high 10.40.40.50
+set access address-assignment pool RA-KODE-pool family inet xauth-attributes primary-dns 8.8.8.8/32
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGURE USER CREDENTIALS
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+set access profile RA-KODE-access client admin firewall-user password "$9$1EBREyvMXVwgSrVY"
+set access profile RA-KODE-access address-assignment pool RA-KODE-pool
+
+set access firewall-authentication web-authentication default-profile RA-KODE-access  --  set authentication
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGURE SERVICES FOR CERTIFICATE
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+set services ssl termination profile RA-KODE-term server-certificate KODE  --  bind ssl service to certificate
+
+set security tcp-encap profile KODE-SSL ssl-profile RA-KODE-term
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGURE IKE PARAMETERS
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+set security ike proposal RA-KODE-VPN-proposal authentication-method pre-shared-keys
+set security ike proposal RA-KODE-VPN-proposal dh-group group19
+set security ike proposal RA-KODE-VPN-proposal authentication-algorithm sha-256
+set security ike proposal RA-KODE-VPN-proposal encryption-algorithm aes-256-cbc
+
+set security ike policy RA-KODE-VPN-policy mode aggressive
+set security ike policy RA-KODE-VPN-policy proposals RA-KODE-VPN-proposal
+set security ike policy RA-KODE-VPN-policy pre-shared-key ascii-text "$9$WhkXNb4aU.PQs2PQFnpu8X7-s2oJGiqm"
+
+set security ike gateway RA-KODE-VPN-gateway ike-policy RA-KODE-VPN-policy
+set security ike gateway RA-KODE-VPN-gateway dynamic user-at-hostname "admin@dev.kode.net"
+set security ike gateway RA-KODE-VPN-gateway dynamic ike-user-type shared-ike-id
+set security ike gateway RA-KODE-VPN-gateway dead-peer-detection optimized
+set security ike gateway RA-KODE-VPN-gateway dead-peer-detection interval 10
+set security ike gateway RA-KODE-VPN-gateway dead-peer-detection threshold 5
+set security ike gateway RA-KODE-VPN-gateway local-identity inet 34.148.113.148
+set security ike gateway RA-KODE-VPN-gateway external-interface ge-0/0/0
+set security ike gateway RA-KODE-VPN-gateway aaa access-profile RA-KODE-access
+set security ike gateway RA-KODE-VPN-gateway version v1-only
+set security ike gateway RA-KODE-VPN-gateway tcp-encap-profile KODE-SSL
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGURE IPSEC PARAMETERS
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+set security ipsec policy RA-KODE-VPN-policy perfect-forward-secrecy keys group19
+set security ipsec policy RA-KODE-VPN-policy proposals RA-KODE-VPN-proposal
+
+set security ipsec proposal RA-KODE-VPN-proposal protocol esp
+set security ipsec proposal RA-KODE-VPN-proposal encryption-algorithm aes-256-gcm
+
+set security ipsec vpn RA-KODE-VPN bind-interface st0.100
+set security ipsec vpn RA-KODE-VPN df-bit clear
+set security ipsec vpn RA-KODE-VPN ike gateway RA-KODE-VPN-gateway
+set security ipsec vpn RA-KODE-VPN ike ipsec-policy RA-KODE-VPN-policy
+set security ipsec vpn RA-KODE-VPN traffic-selector ts-1 local-ip 0.0.0.0/0
+set security ipsec vpn RA-KODE-VPN traffic-selector ts-1 remote-ip 0.0.0.0/0
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGURE REMOTE ACCESS CONFIGURATION
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+set security remote-access profile RA-KODE-VPN-proposal ipsec-vpn RA-KODE-VPN
+set security remote-access profile RA-KODE-VPN-proposal access-profile RA-KODE-access
+set security remote-access profile RA-KODE-VPN-proposal client-config RA-KODE-VPN-client
+set security remote-access client-config RA-KODE-VPN-client connection-mode manual
+set security remote-access client-config RA-KODE-VPN-client dead-peer-detection interval 60
+set security remote-access client-config RA-KODE-VPN-client dead-peer-detection threshold 5
+set security remote-access default-profile RA-KODE-VPN-proposal
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+commit
+
+
+
+
+
+
+
+

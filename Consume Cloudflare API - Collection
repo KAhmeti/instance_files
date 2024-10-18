@@ -1,0 +1,633 @@
+{
+	"info": {
+		"_postman_id": "71eca5b0-2a8a-45df-ac56-16bab6ac476e",
+		"name": "Consuming Cloudflare API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "32482651"
+	},
+	"item": [
+		{
+			"name": "Initiate tunnel to Cloudflare",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": ",}!JS>UI15@GadoDM2xdRZ!9G)}2n!",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Auth-Email",
+						"value": "kastriotahmeti@kodelabs.com",
+						"type": "text"
+					},
+					{
+						"key": "X-Auth-Key",
+						"value": "52aa54b8be19b90efda0171fb531b6",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"config_src\": \"cloudflare\",\r\n  \"name\": \"${insert client preferred name}\",\r\n  \"tunnel_secret\": \"dGhpcyBpcyBhIHRlc3QgdHVubmVsIG5vdCBmb3IgcHJvZHVjdGlvbiB1c2UK\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.cloudflare.com/client/v4/accounts/${insert account identifier}/cfd_tunnel",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudflare",
+						"com"
+					],
+					"path": [
+						"client",
+						"v4",
+						"accounts",
+						"${insert account identifier}",
+						"cfd_tunnel"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get tunnel token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": ",}!JS>UI15@GadoDM2xdRZ!9G)}2n!",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Auth-Email",
+						"value": "kastriotahmeti@kodelabs.com",
+						"type": "text"
+					},
+					{
+						"key": "X-Auth-Key",
+						"value": "52aa54b8be19b90efda0171fb531b6",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://api.cloudflare.com/client/v4/accounts/${insert account identifier}/cfd_tunnel/${insert tunnel id}/token",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudflare",
+						"com"
+					],
+					"path": [
+						"client",
+						"v4",
+						"accounts",
+						"${insert account identifier}",
+						"cfd_tunnel",
+						"${insert tunnel id}",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Set tunnel configs (http)",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": ",}!JS>UI15@GadoDM2xdRZ!9G)}2n!",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "X-Auth-Email",
+						"value": "kastriotahmeti@kodelabs.com",
+						"type": "text"
+					},
+					{
+						"key": "X-Auth-Key",
+						"value": "52aa54b8be19b90efda0171fb531b6",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"config\": {\r\n      \"warp-routing\": {\r\n        \"enabled\": false\r\n      },\r\n      \"originRequest\":{},\r\n      \"ingress\": [\r\n        {\r\n          \"hostname\": \"${insert chosen hostname}.kodesre.com\",\r\n          \"service\": \"http://{controller endpoint}:{port}\",\r\n          \"originRequest\": {}\r\n        },\r\n        {\r\n            \"service\": \"http_status:404\"\r\n        }\r\n      ]\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.cloudflare.com/client/v4/accounts/${insert account identifier}/cfd_tunnel/${insert tunnel id}/configurations",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudflare",
+						"com"
+					],
+					"path": [
+						"client",
+						"v4",
+						"accounts",
+						"${insert account identifier}",
+						"cfd_tunnel",
+						"${insert tunnel id}",
+						"configurations"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Set tunnel configs (https)",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": ",}!JS>UI15@GadoDM2xdRZ!9G)}2n!",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "X-Auth-Email",
+						"value": "kastriotahmeti@kodelabs.com",
+						"type": "text"
+					},
+					{
+						"key": "X-Auth-Key",
+						"value": "52aa54b8be19b90efda0171fb531b6",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"config\": {\r\n      \"warp-routing\": {\r\n        \"enabled\": false\r\n      },\r\n      \"originRequest\":{},\r\n      \"ingress\": [\r\n        {\r\n          \"hostname\": \"${insert chosen hostname}.kodesre.com\",\r\n          \"service\": \"https://{controller endpoint}:{port}\",\r\n          \"originRequest\": {\r\n              \"http2Origin\": true,\r\n              \"noTLSVerify\": true\r\n          }\r\n        },\r\n        {\r\n            \"service\": \"http_status:404\"\r\n        }\r\n      ]\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.cloudflare.com/client/v4/accounts/${insert account identifier}/cfd_tunnel/${insert tunnel id}/configurations",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudflare",
+						"com"
+					],
+					"path": [
+						"client",
+						"v4",
+						"accounts",
+						"${insert account identifier}",
+						"cfd_tunnel",
+						"${insert tunnel id}",
+						"configurations"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create DNS record",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": ",}!JS>UI15@GadoDM2xdRZ!9G)}2n!",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Auth-Key",
+						"value": "52aa54b8be19b90efda0171fb531b6",
+						"type": "text"
+					},
+					{
+						"key": "X-Auth-Email",
+						"value": "kastriotahmeti@kodelabs.com",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"content\": \"${insert tunnel id}.cfargotunnel.com\",\r\n  \"name\": \"${insert chosen hostname}.kodesre.com\",\r\n  \"proxied\": true,\r\n  \"type\": \"CNAME\",\r\n  \"tags\": [],\r\n  \"ttl\": 0\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.cloudflare.com/client/v4/zones/${insert zone id}/dns_records",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudflare",
+						"com"
+					],
+					"path": [
+						"client",
+						"v4",
+						"zones",
+						"${insert zone id}",
+						"dns_records"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create application",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": ",}!JS>UI15@GadoDM2xdRZ!9G)}2n!",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Auth-Email",
+						"value": "kastriotahmeti@kodelabs.com",
+						"type": "text"
+					},
+					{
+						"key": "X-Auth-Key",
+						"value": "52aa54b8be19b90efda0171fb531b6",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"app_launcher_visible\": true,\r\n  \"auto_redirect_to_identity\": false,\r\n  \"domain\": \"${insert chosen hostname}.kodesre.com\",\r\n  \"enable_binding_cookie\": false,\r\n  \"http_only_cookie_attribute\": true,\r\n  \"name\": \"${insert client preferred name}\",\r\n  \"session_duration\": \"0s\",\r\n  \"skip_interstitial\": true,\r\n  \"tags\": [],\r\n  \"type\": \"self_hosted\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.cloudflare.com/client/v4/accounts/${insert account identifier}/access/apps",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudflare",
+						"com"
+					],
+					"path": [
+						"client",
+						"v4",
+						"accounts",
+						"${insert account identifier}",
+						"access",
+						"apps"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create application policy",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": ",}!JS>UI15@GadoDM2xdRZ!9G)}2n!",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Auth-Email",
+						"value": "kastriotahmeti@kodelabs.com",
+						"type": "text"
+					},
+					{
+						"key": "X-Auth-Key",
+						"value": "52aa54b8be19b90efda0171fb531b6",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"decision\": \"bypass\",\r\n  \"include\": [\r\n    {\r\n        \"ip\": {\r\n            \"ip\": \"34.139.240.46/32\"\r\n        }\r\n    },\r\n    {\r\n        \"ip\": {\r\n            \"ip\": \"178.132.223.156/32\"\r\n        }\r\n    },\r\n    {\r\n        \"ip\": {\r\n            \"ip\": \"35.190.173.3/32\"\r\n        }\r\n    },\r\n    {\r\n        \"ip\": {\r\n            \"ip\": \"87.238.211.252/32\"\r\n        }\r\n    },\r\n    {\r\n        \"ip\": {\r\n            \"ip\": \"35.196.211.48/32\"\r\n        }\r\n    }\r\n],\r\n  \"name\": \"Bypass\",\r\n  \"precedence\": 1,\r\n  \"session_duration\": \"0s\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.cloudflare.com/client/v4/accounts/${insert account identifier}/access/apps/${insert application id}/policies",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudflare",
+						"com"
+					],
+					"path": [
+						"client",
+						"v4",
+						"accounts",
+						"${insert account identifier}",
+						"access",
+						"apps",
+						"${insert application id}",
+						"policies"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete DNS record",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "52aa54b8be19b90efda0171fb531b6",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "X-Auth-Email",
+						"value": "kastriotahmeti@kodelabs.com",
+						"type": "text"
+					},
+					{
+						"key": "X-Auth-Key",
+						"value": "52aa54b8be19b90efda0171fb531b6",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://api.cloudflare.com/client/v4/zones/${insert zone id}/dns_records/${insert dns record id}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudflare",
+						"com"
+					],
+					"path": [
+						"client",
+						"v4",
+						"zones",
+						"${insert zone id}",
+						"dns_records",
+						"${insert dns record id}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete application",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": ",}!JS>UI15@GadoDM2xdRZ!9G)}2n!",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "X-Auth-Key",
+						"value": "52aa54b8be19b90efda0171fb531b6",
+						"type": "text"
+					},
+					{
+						"key": "X-Auth-Email",
+						"value": "kastriotahmeti@kodelabs.com",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.cloudflare.com/client/v4/accounts/${insert account identifier}/access/apps/${insert application id}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudflare",
+						"com"
+					],
+					"path": [
+						"client",
+						"v4",
+						"accounts",
+						"${insert account identifier}",
+						"access",
+						"apps",
+						"${insert application id}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete tunnel connections",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "5edf4a8c-567b-4b4d-b0a9-924abf3a6cb8",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "X-Auth-Email",
+						"value": "kastriotahmeti@kodelabs.com",
+						"type": "text"
+					},
+					{
+						"key": "X-Auth-Key",
+						"value": "52aa54b8be19b90efda0171fb531b",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.cloudflare.com/client/v4/accounts/${insert account identifier}/cfd_tunnel/${insert account identifier}/connections",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudflare",
+						"com"
+					],
+					"path": [
+						"client",
+						"v4",
+						"accounts",
+						"${insert account identifier}",
+						"cfd_tunnel",
+						"${insert account identifier}",
+						"connections"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete tunnel",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "52aa54b8be19b90efda0171fb531b6",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "X-Auth-Email",
+						"value": "kastriotahmeti@kodelabs.com",
+						"type": "text"
+					},
+					{
+						"key": "X-Auth-Key",
+						"value": "52aa54b8be19b90efda0171fb531b6",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.cloudflare.com/client/v4/accounts/${insert account identifier}/cfd_tunnel/${insert tunnel id}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudflare",
+						"com"
+					],
+					"path": [
+						"client",
+						"v4",
+						"accounts",
+						"${insert account identifier}",
+						"cfd_tunnel",
+						"${insert tunnel id}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
